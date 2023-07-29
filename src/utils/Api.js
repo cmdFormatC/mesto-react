@@ -62,12 +62,7 @@ class Api {
             method: 'DELETE',
             headers: this._headers
             })
-            .then(res =>  {
-                if (res.ok) {
-                    return res.json();
-                }
-                return Promise.reject(`Ошибка: ${res.status}`);
-            })
+            .then(this._checkResponse)
         }   
     }
     updateAvatar(url) {
