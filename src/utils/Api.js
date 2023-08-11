@@ -26,8 +26,8 @@ class Api {
             method: 'PATCH',
             headers: this._headers,
             body: JSON.stringify({
-              name: `${inputValues.profileName}`,
-              about: `${inputValues.profileDescription}`
+              name: `${inputValues.name}`,
+              about: `${inputValues.about}`
             })
           })
           .then(this._checkResponse); 
@@ -69,9 +69,7 @@ class Api {
         return fetch(`${this._baseUrl}/users/me/avatar`, {
             method: 'PATCH',
             headers: this._headers,
-            body: JSON.stringify({
-                avatar: url
-              }),
+            body: JSON.stringify(url),
         })
         .then(this._checkResponse)
     }
