@@ -1,7 +1,5 @@
 import '../index';
-import Header from './Header';
 import Main from './Main';
-import Footer from './Footer';
 import React from 'react'
 import ImagePopup from './ImagePopup';
 import api from '../utils/Api';
@@ -9,16 +7,28 @@ import { CurrentUserContext } from '../contexts/CurrentUserContext';
 import EditProfilePopup from './EditProfilePopup';
 import EditAvatarPopup from './EditAvatarPopup';
 import AddPlacePopup from './AddPlacePopup';
+import {  Routes, Route, useNavigate } from "react-router-dom";
+import Login from './Login';
+import Register from './Register';
+import ProtectedRouteElement from "./ProtectedRoute";
+import * as auth from '../utils/Auth'
+
 
 function App() {
   const [isEditAvatarPopupOpen, setEditAvatarPopupOpen] = React.useState(false);
   const [isEditProfilePopupOpen, setEditProfilePopupOpen] = React.useState(false);
   const [isAddPlacePopupOpen, setAddPlacePopupOpen] = React.useState(false);
+  const [isNotificationPopupOpen, setNotificationPopupOpen] = React.useState(false);
   const [selectedCard, setSelectedCard] = React.useState({name: '', link: ''});
   const [currentUser, setCurrentUser] = React.useState('');
   const [cards, setCards] = React.useState([]);
+  const [loggedIn, setLoggedIn] = React.useState(false);
+  const [userEmail, setUserEmail] = React.useState('');
+
+  const navigate = useNavigate()
 
   React.useEffect(() => {
+    handleTokenCheck();
     api.getUserInfo()
     .then((result) => {
       setCurrentUser(result)
@@ -41,6 +51,20 @@ function App() {
     })
   }, [])
 
+  function signOut(){
+    localStorage.removeItem('jwt');
+    navigate("/sign-in", {replace: true});
+  }
+  
+  const handleLogin = (email) => {
+    setLoggedIn(true);
+    setUserEmail(email)
+  }
+
+  function authNotify() {
+    setNotificationPopupOpen(true);
+  }
+
   function handleCardClick (card) {
     setSelectedCard(card);
   };
@@ -61,12 +85,12 @@ function App() {
     setEditAvatarPopupOpen(false);
     setEditProfilePopupOpen(false);
     setAddPlacePopupOpen(false);
+    setNotificationPopupOpen(false);
     setSelectedCard({name: '', link: ''});
   };
 
   function handleCardLike(card) {
     const isLiked = card.likes.some(i => i._id === currentUser._id);
-    
     api.togglelike(card._id, !isLiked)
     .then((newCard) => {
         setCards((state) => state.map((c) => c._id === card._id ? newCard : c));
@@ -128,33 +152,62 @@ function App() {
   });
   }
 
+  const handleTokenCheck = () => {
+    if (localStorage.getItem('jwt')){
+      const jwt = localStorage.getItem('jwt');
+      auth.checkToken(jwt).then((res) => {
+        if (res){
+          setUserEmail(res.data.email)
+          setLoggedIn(true);
+          navigate("/", {replace: true});
+        }
+      });
+    };
+  }
+
   return (
     <CurrentUserContext.Provider value={currentUser}>
-      <div className="root">
-        <Header />
-        <Main
-          onEditProfile = {handleEditProfileClick}
-          onAddPlace = {handleAddPlaceClick}
-          onEditAvatar = {handleEditAvatarClick}
-          onCardClick = {handleCardClick}
-          onCardLike = {handleCardLike}
-          onCardDelete = {handleCardDelete}
-          cards={cards}
-        />
-        <Footer />
-        <EditProfilePopup  
-          isOpen={isEditProfilePopupOpen}
-          onClose = {closeAllPopups} 
-          onUpdateUser = {handleUpdateUser}
-        />
-        <AddPlacePopup onAddPlace={handleAddPlaceSubmit} isOpen={isAddPlacePopupOpen} onClose={closeAllPopups} />
-        <EditAvatarPopup isOpen={isEditAvatarPopupOpen} onClose={closeAllPopups} onUpdateAvatar={handleUpdateAvatar} />
-        <ImagePopup 
-          name="zoom-image"
-          onClose = {closeAllPopups}
-          card = {selectedCard}
-        />
-      </div>
+      <Routes>
+        <Route path="/" element={<ProtectedRouteElement element={Main}
+            onEditProfile = {handleEditProfileClick}
+            onAddPlace = {handleAddPlaceClick}
+            onEditAvatar = {handleEditAvatarClick}
+            onCardClick = {handleCardClick}
+            onCardLike = {handleCardLike}
+            onCardDelete = {handleCardDelete}
+            userEmail = {userEmail}
+            cards={cards}
+            loggedIn={loggedIn}
+            onLogout={signOut} />}  />
+        
+        <Route path="/sign-up" element={
+          <Register
+            isPopupOpen={isNotificationPopupOpen}
+            onClose = {closeAllPopups}
+            onNotify = {authNotify}
+          />
+        } />
+        <Route path="/sign-in" element={
+          <Login
+            isPopupOpen={isNotificationPopupOpen}
+            onClose = {closeAllPopups}
+            onNotify = {authNotify}
+            onLogin={handleLogin}
+          />
+        } />
+      </Routes>
+      <EditProfilePopup  
+        isOpen={isEditProfilePopupOpen}
+        onClose = {closeAllPopups} 
+        onUpdateUser = {handleUpdateUser}
+      />
+      <AddPlacePopup onAddPlace={handleAddPlaceSubmit} isOpen={isAddPlacePopupOpen} onClose={closeAllPopups} />
+      <EditAvatarPopup isOpen={isEditAvatarPopupOpen} onClose={closeAllPopups} onUpdateAvatar={handleUpdateAvatar} />
+      <ImagePopup 
+        name="zoom-image"
+        onClose = {closeAllPopups}
+        card = {selectedCard}
+      />
     </CurrentUserContext.Provider>
   );
 }

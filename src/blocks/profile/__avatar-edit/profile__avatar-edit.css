@@ -11,7 +11,7 @@
     padding: 0;
     border: none;
     background-color: #0000;
-    background-size: 26px 26px;
+    /* background-size: 26px 26px; */
     outline: none;
     width: 120px;
     border-radius: 50%;
@@ -20,4 +20,20 @@
 .profile__avatar-edit:hover {
     opacity: 1;
     background-color: rgba(0, 0, 0, 0.8);
+}
+
+
+@media screen and (max-width: 1279px) { 
+    .profile__avatar-edit { 
+        width: 9.375vw;
+        height: 9.375vw;
+    } 
+}
+
+@media screen and (max-width: 767px) { 
+    .profile__avatar-edit { 
+        width: 37.5vw;
+        height: 37.5vw;
+        
+    } 
 }
